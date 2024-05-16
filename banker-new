@@ -1,0 +1,113 @@
+#include <iostream>
+#include <vector>
+using namespace std;
+
+const int num_resources = 3;
+const int num_process = 5;
+
+void calculateNeed(int allocate[][num_resources], int maxNeed[][num_resources], vector<vector<int>> &remNeed)
+{
+    for (int i = 0; i < num_process; i++)
+    {
+        for (int j = 0; j < num_resources; j++)
+        {
+            remNeed[i][j] = maxNeed[i][j] - allocate[i][j];
+        }
+    }
+}
+
+void isSafeUtil(int allocate[][num_resources], int maxNeed[][num_resources], int available[], vector<bool> &finished, vector<int> &safeSeq, vector<vector<int>> &allSafeSeq)
+{
+    vector<vector<int>> remNeed(num_process, vector<int>(num_resources, 0));
+    calculateNeed(allocate, maxNeed, remNeed);
+    bool found = false;
+    for (int i = 0; i < num_process; i++)
+    {
+        if (!finished[i])
+        {
+            int j;
+            for (j = 0; j < num_resources; j++)
+            {
+                if (remNeed[i][j] > available[j])
+                {
+                    break;
+                }
+            }
+            if (j == num_resources)
+            {
+                for (int k = 0; k < num_resources; k++)
+                {
+                    available[k] += allocate[i][k];
+                }
+                safeSeq.push_back(i + 1);
+                finished[i] = true;
+                isSafeUtil(allocate, maxNeed, available, finished, safeSeq, allSafeSeq);
+                finished[i] = false;
+                safeSeq.pop_back();
+                found = true;
+            }
+        }
+    }
+
+    if (!found)
+    {
+        allSafeSeq.push_back(safeSeq);
+    }
+}
+
+vector<vector<int>> isSafe(int allocate[][num_resources], int maxNeed[][num_resources], int available[])
+{
+    vector<vector<int>> allSafeSeq;
+    vector<bool> finished(num_process, false);
+    vector<int> safeSeq;
+
+    isSafeUtil(allocate, maxNeed, available, finished, safeSeq, allSafeSeq);
+    
+    return allSafeSeq;
+}
+
+int main()
+{
+
+    int total[] = {10, 5, 7};
+
+    // allocate matrix
+    int allocate[num_process][num_resources] = {{0, 1, 0},
+                                                {2, 0, 0},
+                                                {3, 0, 2},
+                                                {2, 1, 1},
+                                                {0, 0, 2}};
+
+    int maxNeed[num_process][num_resources] = {{7, 5, 3},
+                                               {3, 2, 2},
+                                               {9, 0, 2},
+                                               {4, 2, 2},
+                                               {5, 3, 3}};
+
+    int available[num_resources];
+
+    for (int i = 0; i < num_resources; i++)
+    {
+        int total_alloc = 0;
+        for (int j = 0; j < num_process; j++)
+        {
+            total_alloc += allocate[j][i];
+        }
+        available[i] = total[i] - total_alloc;
+    }
+
+    vector<vector<int>> allSafeSeq = isSafe(allocate, maxNeed, available);
+
+    cout << "All safe sequences:" << endl;
+    for (int i = 0; i < allSafeSeq.size(); i++)
+    {
+        cout << "Safe sequence " << i + 1 << ": ";
+        for (int j = 0; j < allSafeSeq[i].size(); j++)
+        {
+            cout << "P" << allSafeSeq[i][j] << " ";
+        }
+        cout << endl;
+    }
+
+    return 0;
+}
